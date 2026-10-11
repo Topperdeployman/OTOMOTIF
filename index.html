@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi & Kalkulator Bore-Up Motor Seimbang</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --warning: #f59e0b;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 25px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background-color: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9em;
+      color: var(--text-dim);
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #fff;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+      margin-top: 10px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .res-val {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: var(--accent);
+    }
+    ul {
+      padding-left: 20px;
+      color: var(--text-dim);
+    }
+    li {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>⚙️ Simulator & Kalkulator Bore-Up Motor</h1>
+  
+  <div class="grid">
+    <!-- Form Input -->
+    <div class="card">
+      <h3>Spesifikasi Motor</h3>
+      
+      <div class="form-group">
+        <label>Tipe Motor Preset:</label>
+        <select id="preset" onchange="loadPreset()">
+          <option value="custom">-- Kustom --</option>
+          <option value="beat">Honda Beat / Vario 110 (50 x 55.1 mm)</option>
+          <option value="vario150">Honda Vario 150 (57.3 x 57.9 mm)</option>
+          <option value="nmax">Yamaha NMAX / Aerox 155 (58 x 58.7 mm)</option>
+          <option value="mio">Yamaha Mio Sporty / Smile (50 x 57.9 mm)</option>
+          <option value="crf">Honda CRF150L / KLX150 (57.3 x 57.8 mm)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Diameter Piston Standar (mm):</label>
+        <input type="number" id="stdBore" step="0.1" value="58">
+      </div>
+      <div class="form-group">
+        <label>Langkah / Stroke Standar (mm):</label>
+
+        <input type="number" id="stroke" step="0.1" value="58.7">
+      </div>
+      <div class="form-group">
+        <label>Diameter Piston Baru / Bore-Up (mm):</label>
+        <input type="number" id="newBore" step="0.1" value="62">
+      </div>
+      <div class="form-group">
+        <label>Debit Injektor Standar (cc/min):</label>
+        <input type="number" id="stdInj" value="150">
+      </div>
+
+      <button onclick="hitungBoreUp()">Hitung & Simulasi</button>
+    </div>
+
+    <!-- Hasil Simulasi -->
+    <div class="card">
+      <h3>Hasil Simulasi Komponen</h3>
+      <p>Kapasitas Mesin Asli: <span id="ccStd" class="res-val">-</span> cc</p>
+      <p>Kapasitas Mesin Baru: <span id="ccNew" class="res-val">-</span> cc</p>
+      <p>Kenaikan Kapasitas: <span id="ccIncrease" style="color:var(--warning); font-weight:bold;">-</span></p>
+      
+      <hr style="border-color: #334155;">
+      
+      <h4>Rekomendasi Penyesuaian Komponen:</h4>
+      <ul id="recommendations">
+        <li>Masukkan data dan klik 'Hitung & Simulasi'</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const presets = {
+  beat: { bore: 50, stroke: 55.1, inj: 100 },
+  vario150: { bore: 57.3, stroke: 57.9, inj: 125 },
+  nmax: { bore: 58, stroke: 58.7, inj: 150 },
+  mio: { bore: 50, stroke: 57.9, inj: 110 },
+  crf: { bore: 57.3, stroke: 57.8, inj: 125 }
+};
+
+function loadPreset() {
+  const val = document.getElementById('preset').value;
+  if(presets[val]) {
+    document.getElementById('stdBore').value = presets[val].bore;
+    document.getElementById('stroke').value = presets[val].stroke;
+    document.getElementById('stdInj').value = presets[val].inj;
+  }
+}
+
+function hitungBoreUp() {
+  const stdBore = parseFloat(document.getElementById('stdBore').value);
+  const stroke = parseFloat(document.getElementById('stroke').value);
+  const newBore = parseFloat(document.getElementById('newBore').value);
+  const stdInj = parseFloat(document.getElementById('stdInj').value);
+
+  if(!stdBore || !stroke || !newBore) {
+    alert("Mohon isi semua parameter ukuran!");
+    return;
+  }
+
+  // Rumus CC = (PI * Bore^2 * Stroke) / 4000
+  const ccStd = (Math.PI * Math.pow(stdBore, 2) * stroke) / 4000;
+  const ccNew = (Math.PI * Math.pow(newBore, 2) * stroke) / 4000;
+  const pctInc = ((ccNew - ccStd) / ccStd) * 100;
+
+  document.getElementById('ccStd').innerText = ccStd.toFixed(1);
+  document.getElementById('ccNew').innerText = ccNew.toFixed(1);
+  document.getElementById('ccIncrease').innerText = "+" + pctInc.toFixed(1) + "%";
+
+  // Rekomendasi Komponen
+  const recList = document.getElementById('recommendations');
+  recList.innerHTML = "";
+
+  // 1. Injektor
+  const reqInj = Math.round(stdInj * (ccNew / ccStd));
+  recList.innerHTML += `<li><b>Injektor:</b> Naikkan debit ke <b>${reqInj} cc/min</b> (sebelumnya ${stdInj} cc/min) agar bahan bakar tidak terlalu irit/kering.</li>`;
+
+  // 2. Throttle Body
+  const recTB = Math.round(24 + (pctInc * 0.15));
+  recList.innerHTML += `<li><b>Throttle Body / Karburator:</b> Rekomendasi venturi <b>${recTB} mm - ${recTB + 2} mm</b>.</li>`;
+
+  // 3. Pendinginan
+  if(pctInc > 20) {
+    recList.innerHTML += `<li><b>Sistem Pendinginan:</b> Wajib ganti Radiator Big Volume atau tambah <i>Oil Cooler</i> (potensi overheat tinggi).</li>`;
+  } else {
+    recList.innerHTML += `<li><b>Sistem Pendinginan:</b> Cukup gunakan cairan coolant berkualitas & cek kondisi kipas.</li>`;
+  }
+
+  // 4. Busi & Bahan Bakar
+  if(pctInc > 15) {
+    recList.innerHTML += `<li><b>Bahan Bakar & Busi:</b> Gunakan BBM minimal RON 92/95 (Pertamax/Shell V-Power) & busi tingkat dingin 1 tingkat di atas standar.</li>`;
+  }
+
+  // 5. Transmisi
+  recList.innerHTML += `<li><b>Transmisi/Kopling:</b> Ringankan roller -1s/d -2 gram (Matic) atau ganti per kopling lebih keras agar tenaga tidak selip.</li>`;
+}
+</script>
+
+</body>
+</html>
