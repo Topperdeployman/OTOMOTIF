@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulasi & Kalkulator Bore-Up Motor Seimbang</title>
+  <title>Simulator Bore-Up & Stroke-Up Motor</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -21,7 +21,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 800px;
+      max-width: 850px;
       margin: 0 auto;
     }
     h1 {
@@ -34,7 +34,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
-    @media (max-width: 600px) {
+    @media (max-width: 650px) {
       .grid { grid-template-columns: 1fr; }
     }
     .card {
@@ -77,7 +77,7 @@
       opacity: 0.9;
     }
     .res-val {
-      font-size: 1.5em;
+      font-size: 1.4em;
       font-weight: bold;
       color: var(--accent);
     }
@@ -86,14 +86,15 @@
       color: var(--text-dim);
     }
     li {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>⚙️ Simulator & Kalkulator Bore-Up Motor</h1>
+  <h1>⚙️ Simulator Bore-Up & Stroke-Up Motor</h1>
   
   <div class="grid">
     <!-- Form Input -->
@@ -104,11 +105,19 @@
         <label>Tipe Motor Preset:</label>
         <select id="preset" onchange="loadPreset()">
           <option value="custom">-- Kustom --</option>
-          <option value="beat">Honda Beat / Vario 110 (50 x 55.1 mm)</option>
-          <option value="vario150">Honda Vario 150 (57.3 x 57.9 mm)</option>
-          <option value="nmax">Yamaha NMAX / Aerox 155 (58 x 58.7 mm)</option>
-          <option value="mio">Yamaha Mio Sporty / Smile (50 x 57.9 mm)</option>
-          <option value="crf">Honda CRF150L / KLX150 (57.3 x 57.8 mm)</option>
+          <option value="beat">Honda BeAT / Vario 110 (Matic)</option>
+          <option value="vario150">Honda Vario 150 / 160 (Matic)</option>
+          <option value="nmax">Yamaha NMAX / Aerox 155 (Matic)</option>
+          <option value="crf">Honda CRF150L / MX King (Gigi/Manual)</option>
+          <option value="klx">Kawasaki KLX 150 / D-Tracker (Gigi/Manual)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Jenis Transmisi:</label>
+        <select id="transmisi">
+          <option value="matic">Matic (CVT)</option>
+          <option value="gigi">Gigi / Manual (Bebek / Sport)</option>
         </select>
       </div>
 
@@ -117,34 +126,37 @@
         <input type="number" id="stdBore" step="0.1" value="58">
       </div>
       <div class="form-group">
-        <label>Langkah / Stroke Standar (mm):</label>
-
-        <input type="number" id="stroke" step="0.1" value="58.7">
-      </div>
-      <div class="form-group">
         <label>Diameter Piston Baru / Bore-Up (mm):</label>
         <input type="number" id="newBore" step="0.1" value="62">
+      </div>
+      <div class="form-group">
+        <label>Langkah / Stroke Standar (mm):</label>
+        <input type="number" id="stdStroke" step="0.1" value="58.7">
+      </div>
+      <div class="form-group">
+        <label>Langkah / Stroke Baru (Pen Stroker) (mm):</label>
+        <input type="number" id="newStroke" step="0.1" value="58.7">
       </div>
       <div class="form-group">
         <label>Debit Injektor Standar (cc/min):</label>
         <input type="number" id="stdInj" value="150">
       </div>
 
-      <button onclick="hitungBoreUp()">Hitung & Simulasi</button>
+      <button onclick="hitungBoreUp()">Hitung & Simulasi Analisis</button>
     </div>
 
     <!-- Hasil Simulasi -->
     <div class="card">
-      <h3>Hasil Simulasi Komponen</h3>
-      <p>Kapasitas Mesin Asli: <span id="ccStd" class="res-val">-</span> cc</p>
-      <p>Kapasitas Mesin Baru: <span id="ccNew" class="res-val">-</span> cc</p>
-      <p>Kenaikan Kapasitas: <span id="ccIncrease" style="color:var(--warning); font-weight:bold;">-</span></p>
+      <h3>Hasil Analisis Komponen</h3>
+      <p>Kapasitas Standar: <span id="ccStd" class="res-val">-</span> cc</p>
+      <p>Kapasitas Baru: <span id="ccNew" class="res-val">-</span> cc</p>
+      <p>Kenaikan Total: <span id="ccIncrease" style="color:var(--warning); font-weight:bold;">-</span></p>
       
       <hr style="border-color: #334155;">
       
       <h4>Rekomendasi Penyesuaian Komponen:</h4>
       <ul id="recommendations">
-        <li>Masukkan data dan klik 'Hitung & Simulasi'</li>
+        <li>Masukkan data dan klik 'Hitung & Simulasi Analisis'</li>
       </ul>
     </div>
   </div>
@@ -152,68 +164,85 @@
 
 <script>
 const presets = {
-  beat: { bore: 50, stroke: 55.1, inj: 100 },
-  vario150: { bore: 57.3, stroke: 57.9, inj: 125 },
-  nmax: { bore: 58, stroke: 58.7, inj: 150 },
-  mio: { bore: 50, stroke: 57.9, inj: 110 },
-  crf: { bore: 57.3, stroke: 57.8, inj: 125 }
+  beat: { bore: 50, stroke: 55.1, inj: 100, trans: 'matic' },
+  vario150: { bore: 57.3, stroke: 57.9, inj: 125, trans: 'matic' },
+  nmax: { bore: 58, stroke: 58.7, inj: 150, trans: 'matic' },
+  crf: { bore: 57.3, stroke: 57.8, inj: 125, trans: 'gigi' },
+  klx: { bore: 58, stroke: 54.4, inj: 125, trans: 'gigi' }
 };
 
 function loadPreset() {
   const val = document.getElementById('preset').value;
   if(presets[val]) {
     document.getElementById('stdBore').value = presets[val].bore;
-    document.getElementById('stroke').value = presets[val].stroke;
+    document.getElementById('newBore').value = presets[val].bore;
+    document.getElementById('stdStroke').value = presets[val].stroke;
+    document.getElementById('newStroke').value = presets[val].stroke;
     document.getElementById('stdInj').value = presets[val].inj;
+    document.getElementById('transmisi').value = presets[val].trans;
   }
 }
 
 function hitungBoreUp() {
   const stdBore = parseFloat(document.getElementById('stdBore').value);
-  const stroke = parseFloat(document.getElementById('stroke').value);
   const newBore = parseFloat(document.getElementById('newBore').value);
+  const stdStroke = parseFloat(document.getElementById('stdStroke').value);
+  const newStroke = parseFloat(document.getElementById('newStroke').value);
   const stdInj = parseFloat(document.getElementById('stdInj').value);
+  const transmisi = document.getElementById('transmisi').value;
 
-  if(!stdBore || !stroke || !newBore) {
-    alert("Mohon isi semua parameter ukuran!");
+  if(!stdBore || !stdStroke || !newBore || !newStroke) {
+    alert("Mohon isi semua parameter spesifikasi!");
     return;
   }
 
   // Rumus CC = (PI * Bore^2 * Stroke) / 4000
-  const ccStd = (Math.PI * Math.pow(stdBore, 2) * stroke) / 4000;
-  const ccNew = (Math.PI * Math.pow(newBore, 2) * stroke) / 4000;
+  const ccStd = (Math.PI * Math.pow(stdBore, 2) * stdStroke) / 4000;
+  const ccNew = (Math.PI * Math.pow(newBore, 2) * newStroke) / 4000;
   const pctInc = ((ccNew - ccStd) / ccStd) * 100;
 
   document.getElementById('ccStd').innerText = ccStd.toFixed(1);
   document.getElementById('ccNew').innerText = ccNew.toFixed(1);
   document.getElementById('ccIncrease').innerText = "+" + pctInc.toFixed(1) + "%";
 
-  // Rekomendasi Komponen
   const recList = document.getElementById('recommendations');
   recList.innerHTML = "";
 
   // 1. Injektor
   const reqInj = Math.round(stdInj * (ccNew / ccStd));
-  recList.innerHTML += `<li><b>Injektor:</b> Naikkan debit ke <b>${reqInj} cc/min</b> (sebelumnya ${stdInj} cc/min) agar bahan bakar tidak terlalu irit/kering.</li>`;
+  recList.innerHTML += `<li><b>Injektor:</b> Wajib upsize ke debit <b>${reqInj} cc/min</b> (sebelumnya ${stdInj} cc/min) agar suplai bensin tidak terlalu kering/kering basah (mencegah piston jebol).</li>`;
 
   // 2. Throttle Body
   const recTB = Math.round(24 + (pctInc * 0.15));
-  recList.innerHTML += `<li><b>Throttle Body / Karburator:</b> Rekomendasi venturi <b>${recTB} mm - ${recTB + 2} mm</b>.</li>`;
+  recList.innerHTML += `<li><b>Throttle Body / Karburator:</b> Rekomendasi venturi <b>${recTB} mm - ${recTB + 2} mm</b> agar aliran udara imbang.</li>`;
 
-  // 3. Pendinginan
-  if(pctInc > 20) {
-    recList.innerHTML += `<li><b>Sistem Pendinginan:</b> Wajib ganti Radiator Big Volume atau tambah <i>Oil Cooler</i> (potensi overheat tinggi).</li>`;
+  // 3. Analisis Sistem Pendinginan (Sesuai Jenis Transmisi)
+  if (transmisi === 'matic') {
+    if (pctInc > 20) {
+      recList.innerHTML += `<li><b>Sistem Pendinginan (Matic):</b> Mesin matic berisiko overheat lebih cepat karena ruang mesin tertutup & putaran kipas konstan. <b>Sangat disarankan memakai Radiator Big Volume + Kipas Ekstra / Oil Cooler</b>.</li>`;
+    } else {
+      recList.innerHTML += `<li><b>Sistem Pendinginan (Matic):</b> Pastikan kipas magnet & air coolant berfungsi optimal. Gunakan coolant berkualitas tinggi.</li>`;
+    }
   } else {
-    recList.innerHTML += `<li><b>Sistem Pendinginan:</b> Cukup gunakan cairan coolant berkualitas & cek kondisi kipas.</li>`;
+    if (pctInc > 25) {
+      recList.innerHTML += `<li><b>Sistem Pendinginan (Gigi/Manual):</b> Karena mendapat terpaan angin langsung saat melaju, ganti Radiator Aluminium/Big Volume atau pasang <b>Oil Cooler</b> agar suhu oli tetap stabil saat turing/kecepatan tinggi.</li>`;
+    } else {
+      recList.innerHTML += `<li><b>Sistem Pendinginan (Gigi/Manual):</b> Sirkulasi pendinginan bawaan mesin masih sanggup menahan panas dengan terpaan angin alami.</li>`;
+    }
   }
 
-  // 4. Busi & Bahan Bakar
-  if(pctInc > 15) {
-    recList.innerHTML += `<li><b>Bahan Bakar & Busi:</b> Gunakan BBM minimal RON 92/95 (Pertamax/Shell V-Power) & busi tingkat dingin 1 tingkat di atas standar.</li>`;
+  // 4. Analisis Transmisi & Penyaluran Tenaga
+  if (transmisi === 'matic') {
+    recList.innerHTML += `<li><b>Transmisi (CVT):</b> Turunkan bobot roller -1 s/d -2 gram, gunakan Per CVT 1200 - 1500 RPM, dan ganti Mangkok Kampas Ganda kartel/berlubang agar tenaga tidak terjadi selip.</li>`;
+  } else {
+    recList.innerHTML += `<li><b>Transmisi (Gigi/Manual):</b> Upgrade per kopling ke tipe lebih keras, gunakan kampas kopling berbahan <i>Kevlar</i>, dan sesuaikan rasio gir depan/belakang (*sprocket*) agar napas mesin tidak terlalu pendek.</li>`;
   }
 
-  // 5. Transmisi
-  recList.innerHTML += `<li><b>Transmisi/Kopling:</b> Ringankan roller -1s/d -2 gram (Matic) atau ganti per kopling lebih keras agar tenaga tidak selip.</li>`;
+  // 5. Analisis Stroke-Up
+  if (newStroke > stdStroke) {
+    const strokeDiff = (newStroke - stdStroke).toFixed(1);
+    recList.innerHTML += `<li><b>Catatan Stroke-Up (+${strokeDiff} mm):</b> Wajib perhatikan paking blok (*spacer*), panjang rantai keteng/kamprat, dan sudut *durasi noken as* agar klep tidak bertabrakan dengan piston.</li>`;
+  }
 }
 </script>
 
